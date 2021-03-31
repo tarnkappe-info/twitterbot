@@ -1,9 +1,8 @@
 # Twitterbot
 
-Twitterbot is a simple Python application for:
+Twitterbot is a simple Python 3 application for:
 
-* reading and parsing a RSS feed and posting its title and links to a Twitter account.
-* searching tweets for keywords or hashtags and retweet those tweets.
+* reading and parsing a RSS feed and posting its title and links to Twitter accounts.
 
 Both functions (Reading RSS and retweeting) can be used independently. The bot is limited to handle one feed and one Twitter account.
 
@@ -30,14 +29,9 @@ Both functions (Reading RSS and retweeting) can be used independently. The bot i
 Read the RSS feed and post to Twitter account:
 
 ```bash
-$ python twitterbot.py rss
+$ python twitterbot.py
 ```
 
-Search for tweets and retweet them:
-
-```bash
-$ python twitterbot.py rt
-```
 
 ## Setup crontabs examples
 
