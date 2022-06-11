@@ -9,42 +9,27 @@ import re
 import sys
 import time
 from datetime import date
+from mastodon import Mastodon
+import requests
+import json
+from discord_webhook import DiscordWebhook
+import auth
 
 class Settings:
-	FeedUrl = "https://tarnkappe.info/feed/"    
+	FeedUrl = "https://tarnkappe.info/feed"
 	PostedUrlsOutputFile = "/root/twitter/posted-urls.log"
 
-class TwitterAuth:
-	"""
-	Twitter authentication settings.
 
-	Create a Twitter app at https://apps.twitter.com/ and generate key, secret etc. and insert them here.
-	"""
-	ConsumerKey = "xx"
-	ConsumerSecret = "xx"
-	AccessToken = "xx"
-	AccessTokenSecret = "x"
-
-
-class TwitterAuthSobiraj:
-	"""
-	Twitter authentication settings.
-
-	Create a Twitter app at https://apps.twitter.com/ and generate key, secret etc. and insert them here.
-	"""
-	ConsumerKey = "xx"
-	ConsumerSecret = "xx"
-	AccessToken = "xx"
-	AccessTokenSecret = "xx"
-
-
-def compose_message(rss_item):
+def compose_message(rss_item, with_cats):
 	"""Compose a tweet from title, link, and description, and then return the final tweet message."""
 	title, link, description = rss_item["title"], rss_item["link"], rss_item["description"]
-	tags = [t.term.replace(" ", "").replace("-", "").replace(".", "") for t in rss_item.get('tags', [])]
+	tags = [t.term.replace(" ", "").replace("-", "").replace(".", "").replace("&", "").replace(":", "").replace(":", "").replace("/", " #").replace("(", "").replace(")", "").replace("$", "").replace("#", "") for t in rss_item.get('tags', [])]
 	categories_string = " #".join(tags)
 	categories_string = "#" + categories_string
-	message = "📬 Neuer Artikel 📬 " + shorten_text(title, maxlength=250) + " "+ str(categories_string) + " " + link
+	message = "📬 " + shorten_text(title, maxlength=240) + "\n"
+	if with_cats:
+		message += str(categories_string) + " "
+	message += link
 	return message
 
 def shorten_text(text, maxlength):
@@ -59,19 +44,47 @@ def post_tweet(message, auth):
 	except TwythonError as e:
 		print(e)
 
+def post_telegram(message):
+	params = {"chat_id": auth.TelegramAuth.ChatID, "text": message}
+	url = f"https://api.telegram.org/bot{auth.TelegramAuth.Token}/sendMessage"
+	requests.post(url, params=params)
+
+def post_toot(message):
+	try:
+		mastodon = Mastodon(auth.MastodonAuth)
+		mastodon.toot(message)
+	except mastodon as e:
+		print(e)
+
+def post_signal(message):
+	data = {"message": message, "number": "+4915156859153", "recipients": [ ]}
+	with open("/root/Signal/rss/numbers.txt") as file:
+		for line in file:
+			data['recipients'].append(line.rstrip())
+	requests.post('http://127.0.0.1:8120/v2/send/', timeout=300, json=data)
+
+def post_discord(message):
+	webhook = DiscordWebhook(url='https://discord.com/api/webhooks/' + auth.DiscordAuth.webhook, content=message)
+	response = webhook.execute()
+
 def read_rss_and_tweet(url):
 	"""Read RSS and post tweet."""
 	feed = feedparser.parse(url)
 	if feed:
 		for item in feed["items"]:
 			link = item["link"]
-			if is_in_logfile(link, Settings.PostedUrlsOutputFile):
-				print("Already posted:", link)
+			permalink = item["guid"]
+			if is_in_logfile(permalink, Settings.PostedUrlsOutputFile):
+				print("Already posted:", permalink)
 			else:
-				post_tweet(message = compose_message(item), auth = TwitterAuth)
-				post_tweet(message = compose_message(item), auth = TwitterAuthSobiraj)
-				write_to_logfile(link, Settings.PostedUrlsOutputFile)
-				print("Posted:", link)
+				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
+				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
+				#post_toot(message=compose_message(item, 'JA'))
+				#post_telegram(message=compose_message(item, 'JA'))
+				#post_discord(message=compose_message(item, None))
+				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
+				#post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".')
+				print("Posted:", permalink)
 
 
 def is_in_logfile(content, filename):
