@@ -14,6 +14,7 @@ import requests
 import json
 from discord_webhook import DiscordWebhook
 import auth
+import opengraph
 
 class Settings:
 	FeedUrl = "https://tarnkappe.info/feed"
@@ -77,13 +78,14 @@ def read_rss_and_tweet(url):
 			if is_in_logfile(permalink, Settings.PostedUrlsOutputFile):
 				print("Already posted:", permalink)
 			else:
-				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
-				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
-				#post_toot(message=compose_message(item, 'JA'))
-				#post_telegram(message=compose_message(item, 'JA'))
-				#post_discord(message=compose_message(item, None))
+				image = opengraph.OpenGraph(url=link)['image']
+				post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
+				post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
+				post_toot(message=compose_message(item, 'JA'))
+				post_telegram(message=compose_message(item, 'JA'))
+				post_discord(message=compose_message(item, None))
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				#post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".')
+				post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".')
 				print("Posted:", permalink)
 
 
