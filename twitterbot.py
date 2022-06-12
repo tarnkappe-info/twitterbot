@@ -52,7 +52,7 @@ def post_telegram(message):
 
 def post_toot(message):
 	try:
-		mastodon = Mastodon(auth.MastodonAuth)
+		mastodon = Mastodon(access_token=auth.MastodonAuth.access_token, api_base_url=auth.MastodonAuth.api_base_url)
 		mastodon.toot(message)
 	except mastodon as e:
 		print(e)
