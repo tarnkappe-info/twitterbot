@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import grequests
 from twython import Twython, TwythonError
 import feedparser
 import csv
@@ -10,11 +11,15 @@ import sys
 import time
 from datetime import date
 from mastodon import Mastodon
-import requests
 import json
 from discord_webhook import DiscordWebhook
 import auth
 import opengraph
+import base64
+from PIL import Image
+import io
+import requests
+
 
 class Settings:
 	FeedUrl = "https://tarnkappe.info/feed"
@@ -57,12 +62,35 @@ def post_toot(message):
 	except mastodon as e:
 		print(e)
 
-def post_signal(message):
-	data = {"message": message, "number": "+4915156859153", "recipients": [ ]}
+def stop_signal(number):
+	newfile = []
 	with open("/root/Signal/rss/numbers.txt") as file:
 		for line in file:
-			data['recipients'].append(line.rstrip())
-	requests.post('http://127.0.0.1:8120/v2/send/', timeout=300, json=data)
+			if line.rstrip() == number:
+				continue
+			else:
+				newfile.append(line)
+	file_object = open('/root/Signal/rss/numbers.txt', 'w')
+	file_object.writelines(newfile)
+	file_object.close()
+
+
+def post_signal(message, image):
+	if image:
+		img = Image.open(io.BytesIO(requests.get(image, stream=True).content))
+		img.thumbnail((400, 400))
+		with io.BytesIO() as output:
+			img.save(output, format="PNG")
+			base64data = [str(base64.b64encode(output.getvalue()).decode('utf-8'))]
+	with open("/root/Signal/rss/numbers.txt") as file:
+		rs = list()
+		for line in file:
+			data = {"message": message, "number": "+4915156859153", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
+			rs.append(grequests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data))
+		for resp in grequests.imap(rs, size=10):
+			if resp.status_code is 400:
+				stop_signal(str(json.loads(resp.request.body)["number"]))
+
 
 def post_discord(message):
 	webhook = DiscordWebhook(url='https://discord.com/api/webhooks/' + auth.DiscordAuth.webhook, content=message)
@@ -79,13 +107,13 @@ def read_rss_and_tweet(url):
 				print("Already posted:", permalink)
 			else:
 				image = opengraph.OpenGraph(url=link)['image']
-				post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
-				post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
-				post_toot(message=compose_message(item, 'JA'))
-				post_telegram(message=compose_message(item, 'JA'))
-				post_discord(message=compose_message(item, None))
+				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
+				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
+				#post_toot(message=compose_message(item, 'JA'))
+				#post_telegram(message=compose_message(item, 'JA'))
+				#post_discord(message=compose_message(item, None))
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".')
+				post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
 				print("Posted:", permalink)
 
 
