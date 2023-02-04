@@ -129,15 +129,24 @@ def read_rss_and_tweet(url):
 			else:
 				image = opengraph.OpenGraph(url=link)['image']
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
-				post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
-				post_toot(message=compose_message(item, 'JA', with_link="YES"))
-				post_telegram(message=compose_message(item, 'JA', with_link="YES"))
-				post_discord(message=compose_message(item, None, with_link="YES"))
-				post_facebook(message=compose_message(item, 'JA', None), url=link)
-				post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
-				post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
-				post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
+				try:
+					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
+					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
+				except:
+					pass
+				try:
+					post_toot(message=compose_message(item, 'JA', with_link="YES"))
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"))
+					post_discord(message=compose_message(item, None, with_link="YES"))
+					post_facebook(message=compose_message(item, 'JA', None), url=link)
+				except:
+					pass
+				try:
+					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
+					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
+					post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
+				except:
+					pass
 				print("Posted:", permalink)
 
 
