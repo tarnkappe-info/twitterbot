@@ -19,6 +19,10 @@ import base64
 from PIL import Image
 import io
 import requests
+from pyfacebook import GraphAPI
+import asyncio
+from nio import AsyncClient, MatrixRoom, RoomMessageText
+
 
 
 class Settings:
@@ -26,7 +30,7 @@ class Settings:
 	PostedUrlsOutputFile = "/root/twitter/posted-urls.log"
 
 
-def compose_message(rss_item, with_cats):
+def compose_message(rss_item, with_cats, with_link):
 	"""Compose a tweet from title, link, and description, and then return the final tweet message."""
 	title, link, description = rss_item["title"], rss_item["link"], rss_item["description"]
 	tags = [t.term.replace(" ", "").replace("-", "").replace(".", "").replace("&", "").replace(":", "").replace(":", "").replace("/", " #").replace("(", "").replace(")", "").replace("$", "").replace("#", "") for t in rss_item.get('tags', [])]
@@ -35,7 +39,8 @@ def compose_message(rss_item, with_cats):
 	message = "📬 " + shorten_text(title, maxlength=240) + "\n"
 	if with_cats:
 		message += str(categories_string) + " "
-	message += link
+	if with_link:
+		message += link
 	return message
 
 def shorten_text(text, maxlength):
@@ -78,7 +83,7 @@ def stop_signal(number):
 def post_signal(message, image):
 	if image:
 		img = Image.open(io.BytesIO(requests.get(image, stream=True).content))
-		img.thumbnail((400, 400))
+		img.thumbnail((900, 900))
 		with io.BytesIO() as output:
 			img.save(output, format="PNG")
 			base64data = [str(base64.b64encode(output.getvalue()).decode('utf-8'))]
@@ -87,14 +92,30 @@ def post_signal(message, image):
 		for line in file:
 			data = {"message": message, "number": "+4915156859153", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
 			rs.append(grequests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data))
-		for resp in grequests.imap(rs, size=10):
+		for resp in grequests.imap(rs, size=5):
 			if resp.status_code is 400:
 				stop_signal(str(json.loads(resp.request.body)["number"]))
+
+def post_facebook(message, url):
+	fbapi = GraphAPI(access_token = auth.FbGraphAPI.access_token)
+	fbapi.post_object(object_id="1420074268248034", connection="feed", data={"message": message, "link": url})
 
 
 def post_discord(message):
 	webhook = DiscordWebhook(url='https://discord.com/api/webhooks/' + auth.DiscordAuth.webhook, content=message)
 	response = webhook.execute()
+
+async def post_matrix_async(message, roomid) -> None:
+	matrixclient = AsyncClient("https://matrix.tarnkappe.info", "@tarnbot:tarnkappe.info")
+	matrixclient.access_token = auth.Matrix.access_token
+	await matrixclient.room_send(
+		room_id=roomid,
+		content={"msgtype": "m.text", "body": message},
+		message_type="m.room.message")
+	await matrixclient.close()
+
+def post_matrix(message, roomid):
+	asyncio.get_event_loop().run_until_complete(post_matrix_async(message, roomid))
 
 def read_rss_and_tweet(url):
 	"""Read RSS and post tweet."""
@@ -107,13 +128,16 @@ def read_rss_and_tweet(url):
 				print("Already posted:", permalink)
 			else:
 				image = opengraph.OpenGraph(url=link)['image']
-				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuth)
-				#post_tweet(message=compose_message(item, 'JA'), auth = auth.TwitterAuthSobiraj)
-				#post_toot(message=compose_message(item, 'JA'))
-				#post_telegram(message=compose_message(item, 'JA'))
-				#post_discord(message=compose_message(item, None))
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				post_signal(compose_message(item, None) + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
+				post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
+				post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
+				post_toot(message=compose_message(item, 'JA', with_link="YES"))
+				post_telegram(message=compose_message(item, 'JA', with_link="YES"))
+				post_discord(message=compose_message(item, None, with_link="YES"))
+				post_facebook(message=compose_message(item, 'JA', None), url=link)
+				post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
+				post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
+				post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
 				print("Posted:", permalink)
 
 
