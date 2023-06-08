@@ -22,7 +22,7 @@ import requests
 from pyfacebook import GraphAPI
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
-
+import tweepy
 
 
 class Settings:
@@ -50,9 +50,9 @@ def shorten_text(text, maxlength):
 def post_tweet(message, auth):
 	"""Post tweet message to account."""
 	try:
-		twitter = Twython(auth.ConsumerKey, auth.ConsumerSecret, auth.AccessToken, auth.AccessTokenSecret)
-		twitter.update_status(status = message)
-	except TwythonError as e:
+		twitter = tweepy.Client(consumer_key=auth.ConsumerKey, consumer_secret=auth.ConsumerSecret, access_token=auth.AccessToken, access_token_secret=auth.AccessTokenSecret)
+		twitter.create_tweet(text=message, user_auth=True)
+	except Exception as e:
 		print(e)
 
 def post_telegram(message):
@@ -144,9 +144,12 @@ def read_rss_and_tweet(url):
 				try:
 					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
 					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
-					post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
 				except:
 					pass
+				try:
+					post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
+				except:
+					pass 
 				print("Posted:", permalink)
 
 
