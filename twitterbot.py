@@ -90,7 +90,7 @@ def post_signal(message, image):
 	with open("/root/Signal/rss/numbers.txt") as file:
 		rs = list()
 		for line in file:
-			data = {"message": message, "number": "+4915156859153", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
+			data = {"message": message, "number": "+4917677918637", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
 			rs.append(grequests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data))
 		for resp in grequests.imap(rs, size=5):
 			if resp.status_code is 400:
@@ -106,7 +106,7 @@ def post_discord(message):
 	response = webhook.execute()
 
 async def post_matrix_async(message, roomid) -> None:
-	matrixclient = AsyncClient("https://matrix.tarnkappe.info", "@tarnbot:tarnkappe.info")
+	matrixclient = AsyncClient("https://matrix.tchncs.de", "@tarnkappeinfobot:tchncs.de")
 	matrixclient.access_token = auth.Matrix.access_token
 	await matrixclient.room_send(
 		room_id=roomid,
@@ -142,12 +142,13 @@ def read_rss_and_tweet(url):
 				except:
 					pass
 				try:
-					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
-					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
+					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!qjMnXmeNSaKkFJADEF:tchncs.de')
+					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
+					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
 				except:
 					pass
 				try:
-					post_signal(compose_message(item, None, with_link="YES") + '\nZum beenden, antworten Sie einfach mit "Stop".', image)
+					post_signal(compose_message(item, None, with_link="YES"), image)
 				except:
 					pass 
 				print("Posted:", permalink)
