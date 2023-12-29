@@ -40,7 +40,7 @@ def compose_message(rss_item, with_cats, with_link):
 	if with_cats:
 		message += str(categories_string) + " "
 	if with_link:
-		message += link
+		message += create_shortlink(link)
 	return message
 
 def shorten_text(text, maxlength):
@@ -54,6 +54,12 @@ def post_tweet(message, auth):
 		twitter.create_tweet(text=message, user_auth=True)
 	except Exception as e:
 		print(e)
+
+def create_shortlink(url):
+	params = {"token_auth": auth.Matomo.authtoken, "tokenAuth": auth.Matomo.authtoken, "useExistingCodeIfAvailable": 0, "force_api_session": 1, "url": str(url)}
+	response = dict(requests.post(auth.Matomo.url, params=params).json())
+	return "https://sc.tarnkappe.info/"+response["value"]
+
 
 def post_telegram(message):
 	params = {"chat_id": auth.TelegramAuth.ChatID, "text": message}
