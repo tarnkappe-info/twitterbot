@@ -112,7 +112,7 @@ def post_discord(message):
 	response = webhook.execute()
 
 async def post_matrix_async(message, roomid) -> None:
-	matrixclient = AsyncClient("https://matrix.tchncs.de", "@tarnkappeinfobot:tchncs.de")
+	matrixclient = AsyncClient("https://matrix.tarnkappe.info", "@tk_matrixbot:tarnkappe.info")
 	matrixclient.access_token = auth.Matrix.access_token
 	await matrixclient.room_send(
 		room_id=roomid,
@@ -148,7 +148,7 @@ def read_rss_and_tweet(url):
 				except:
 					pass
 				try:
-					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!qjMnXmeNSaKkFJADEF:tchncs.de')
+					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
 					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
 					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
 				except:
