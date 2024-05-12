@@ -61,9 +61,9 @@ def create_shortlink(url):
 	return "https://sc.tarnkappe.info/"+response["value"]
 
 
-def post_telegram(message):
-	params = {"chat_id": auth.TelegramAuth.ChatID, "text": message}
-	url = f"https://api.telegram.org/bot{auth.TelegramAuth.Token}/sendMessage"
+def post_telegram(message, auth):
+	params = {"chat_id": auth.ChatID, "text": message}
+	url = f"https://api.telegram.org/bot{auth.Token}/sendMessage"
 	requests.post(url, params=params)
 
 def post_toot(message):
@@ -142,7 +142,8 @@ def read_rss_and_tweet(url):
 					pass
 				try:
 					post_toot(message=compose_message(item, 'JA', with_link="YES"))
-					post_telegram(message=compose_message(item, 'JA', with_link="YES"))
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
 					post_discord(message=compose_message(item, None, with_link="YES"))
 					post_facebook(message=compose_message(item, 'JA', None), url=link)
 				except:
