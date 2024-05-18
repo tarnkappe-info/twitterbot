@@ -89,7 +89,7 @@ def stop_signal(number):
 def post_signal(message, image):
 	if image:
 		img = Image.open(io.BytesIO(requests.get(image, stream=True).content))
-		img.thumbnail((900, 900))
+		img.thumbnail((400, 400))
 		with io.BytesIO() as output:
 			img.save(output, format="PNG")
 			base64data = [str(base64.b64encode(output.getvalue()).decode('utf-8'))]
@@ -97,10 +97,22 @@ def post_signal(message, image):
 		rs = list()
 		for line in file:
 			data = {"message": message, "number": "+4917677918637", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
-			rs.append(grequests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data))
-		for resp in grequests.imap(rs, size=5):
-			if resp.status_code is 400:
-				stop_signal(str(json.loads(resp.request.body)["number"]))
+			resp = requests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data)
+			if resp.status_code != int(201):
+				print(resp.status_code)
+				print(resp.content)
+			if "error" in dict(resp.json()).keys():
+				if dict(resp.json())["error"] == "Failed to send message due to untrusted identities":
+					requests.put('http://127.0.0.1:8120/v1/identities/+4915156859153/trust/'+str(line.rstrip()), timeout=600, json={"trust_all_known_keys": True})
+				if dict(resp.json())["error"] == "Failed to send message: [413] Rate limit exceeded: 413 (RateLimitException)":
+					time.sleep(2)
+				if dict(resp.json())["error"] == "Failed to send message":
+					stop_signal(str(json.loads(resp.request.body)["number"]))
+			# Rate Limit
+			if resp.status_code == int(429):
+				time.sleep(1)
+			time.sleep(0.1)
+
 
 def post_facebook(message, url):
 	fbapi = GraphAPI(access_token = auth.FbGraphAPI.access_token)
@@ -135,25 +147,26 @@ def read_rss_and_tweet(url):
 			else:
 				image = opengraph.OpenGraph(url=link)['image']
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				try:
-					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
-					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
-				except:
-					pass
-				try:
-					post_toot(message=compose_message(item, 'JA', with_link="YES"))
-					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
-					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
-					post_discord(message=compose_message(item, None, with_link="YES"))
-					post_facebook(message=compose_message(item, 'JA', None), url=link)
-				except:
-					pass
-				try:
-					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
-					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
-					#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
-				except:
-					pass
+				if True:
+					try:
+						post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
+						post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
+					except:
+						pass
+					try:
+						post_toot(message=compose_message(item, 'JA', with_link="YES"))
+						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
+						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
+						post_discord(message=compose_message(item, None, with_link="YES"))
+						post_facebook(message=compose_message(item, 'JA', None), url=link)
+					except:
+						pass
+					try:
+						post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
+						#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
+						#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
+					except:
+						pass
 				try:
 					post_signal(compose_message(item, None, with_link="YES"), image)
 				except:
