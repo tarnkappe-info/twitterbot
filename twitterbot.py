@@ -106,8 +106,6 @@ def post_signal(message, image):
 					requests.put('http://127.0.0.1:8120/v1/identities/+4915156859153/trust/'+str(line.rstrip()), timeout=600, json={"trust_all_known_keys": True})
 				if dict(resp.json())["error"] == "Failed to send message: [413] Rate limit exceeded: 413 (RateLimitException)":
 					time.sleep(2)
-				if dict(resp.json())["error"] == "Failed to send message":
-					stop_signal(str(json.loads(resp.request.body)["number"]))
 			# Rate Limit
 			if resp.status_code == int(429):
 				time.sleep(1)
