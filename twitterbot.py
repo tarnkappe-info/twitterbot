@@ -155,6 +155,7 @@ def read_rss_and_tweet(url):
 						post_toot(message=compose_message(item, 'JA', with_link="YES"))
 						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
 						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
+						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKIgruppeAuth)
 						post_discord(message=compose_message(item, None, with_link="YES"))
 						post_facebook(message=compose_message(item, 'JA', None), url=link)
 					except:
