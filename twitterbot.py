@@ -23,7 +23,7 @@ from pyfacebook import GraphAPI
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import tweepy
-
+from atproto import Client as bskyclient
 
 class Settings:
 	FeedUrl = "https://tarnkappe.info/feed"
@@ -46,6 +46,12 @@ def compose_message(rss_item, with_cats, with_link):
 def shorten_text(text, maxlength):
 	"""Truncate text and append three dots (...) at the end if length exceeds maxlength chars."""
 	return (text[:maxlength] + '...') if len(text) > maxlength else text
+
+def post_bluesky(message, auth):
+	client = bskyclient.Client()
+	client.login(auth.handle, auth.password)
+	post = client.send_post(message)
+
 
 def post_tweet(message, auth):
 	"""Post tweet message to account."""
@@ -162,8 +168,7 @@ def read_rss_and_tweet(url):
 						pass
 					try:
 						post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
-						#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!y1ahUxHPrBTs6lnf:tarnkappe.info')
-						#post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!ZSgw1Y1VAlHtfVsR:tarnkappe.info')
+						post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
 					except:
 						pass
 				try:
