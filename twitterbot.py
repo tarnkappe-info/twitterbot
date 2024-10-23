@@ -23,7 +23,7 @@ from pyfacebook import GraphAPI
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import tweepy
-from atproto import Client as bskyclient
+#from atproto import Client as bskyclient
 
 class Settings:
 	FeedUrl = "https://tarnkappe.info/feed"
@@ -168,7 +168,7 @@ def read_rss_and_tweet(url):
 						pass
 					try:
 						post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
-						post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
+						#post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
 					except:
 						pass
 				try:
