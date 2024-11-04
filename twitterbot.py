@@ -93,7 +93,8 @@ def stop_signal(number):
 
 
 def post_signal(message, image):
-	if image:
+	# 4.11.24 - Image don't work. No time for debugging.
+	if image and False:
 		img = Image.open(io.BytesIO(requests.get(image, stream=True).content))
 		img.thumbnail((400, 400))
 		with io.BytesIO() as output:
@@ -102,7 +103,7 @@ def post_signal(message, image):
 	with open("/root/Signal/rss/numbers.txt") as file:
 		rs = list()
 		for line in file:
-			data = {"message": message, "number": "+4917677918637", "recipients": [ line.rstrip() ], 'base64_attachments': base64data}
+			data = {"message": message, "number": "+4917677918637", "recipients": [ line.rstrip() ]}
 			resp = requests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data)
 			if resp.status_code != int(201):
 				print(resp.status_code)
@@ -173,7 +174,7 @@ def read_rss_and_tweet(url):
 				try:
 					post_signal(compose_message(item, None, with_link="YES"), image)
 				except:
-					pass 
+					pass
 				print("Posted:", permalink)
 
 
