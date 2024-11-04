@@ -151,26 +151,25 @@ def read_rss_and_tweet(url):
 			else:
 				image = opengraph.OpenGraph(url=link)['image']
 				write_to_logfile(permalink, Settings.PostedUrlsOutputFile)
-				if True:
-					try:
-						post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
-						post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
-					except:
-						pass
-					try:
-						post_toot(message=compose_message(item, 'JA', with_link="YES"))
-						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
-						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
-						post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKIgruppeAuth)
-						post_discord(message=compose_message(item, None, with_link="YES"))
-						post_facebook(message=compose_message(item, 'JA', None), url=link)
-					except:
-						pass
-					try:
-						post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
-						#post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
-					except:
-						pass
+				try:
+					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuth)
+					post_tweet(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TwitterAuthSobiraj)
+				except:
+					pass
+				try:
+					post_toot(message=compose_message(item, 'JA', with_link="YES"))
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramAuth)
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKochgruppeAuth)
+					post_telegram(message=compose_message(item, 'JA', with_link="YES"), auth = auth.TelegramKIgruppeAuth)
+					post_discord(message=compose_message(item, None, with_link="YES"))
+					post_facebook(message=compose_message(item, 'JA', None), url=link)
+				except:
+					pass
+				try:
+					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
+					#post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
+				except:
+					pass
 				try:
 					post_signal(compose_message(item, None, with_link="YES"), image)
 				except:
