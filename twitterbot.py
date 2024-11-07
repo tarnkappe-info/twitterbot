@@ -14,7 +14,7 @@ from mastodon import Mastodon
 import json
 from discord_webhook import DiscordWebhook
 import auth
-import opengraph
+import opengraph_py3 as opengraph
 import base64
 from PIL import Image
 import io
