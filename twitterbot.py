@@ -23,7 +23,7 @@ from pyfacebook import GraphAPI
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import tweepy
-#from atproto import Client as bskyclient
+import atproto
 
 class Settings:
 	FeedUrl = "https://tarnkappe.info/feed"
@@ -47,10 +47,29 @@ def shorten_text(text, maxlength):
 	"""Truncate text and append three dots (...) at the end if length exceeds maxlength chars."""
 	return (text[:maxlength] + '...') if len(text) > maxlength else text
 
-def post_bluesky(message, auth):
-	client = bskyclient.Client()
+def post_bluesky(rss_item, auth, image):
+	tags = [t.term.replace(" ", "").replace("-", "").replace(".", "").replace("&", "").replace(":", "").replace(":", "").replace("/", " #").replace("(", "").replace(")", "").replace("$", "").replace("#", "") for t in rss_item.get('tags', [])]
+	title, link, description = rss_item["title"], rss_item["link"], rss_item["description"]
+	builder = atproto.client_utils.TextBuilder()
+	link = create_shortlink(link)
+	builder.text("📬 ").link(title, link)
+	builder.text("\n\n")
+	for t in tags:
+		builder.tag("#"+t, t)
+		builder.text(" ")
+	client = atproto.Client()
 	client.login(auth.handle, auth.password)
-	post = client.send_post(message)
+
+	thumb = client.upload_blob(requests.get(image, stream=True).content)
+	embed = atproto.models.AppBskyEmbedExternal.Main(
+		external=atproto.models.AppBskyEmbedExternal.External(
+			title=title,
+			uri=link,
+			description=description.replace('<p>','').replace("</p>",""),
+			thumb=thumb.blob,
+		)
+	)
+	post = client.send_post(builder, embed=embed)
 
 
 def post_tweet(message, auth):
@@ -168,7 +187,7 @@ def read_rss_and_tweet(url):
 					pass
 				try:
 					post_matrix(message=compose_message(item, None, with_link="YES"), roomid='!pfwAegfuzkCMNTJkVf:tarnkappe.info')
-					#post_bluesky(message=compose_message(item, True, with_link="YES"), auth = auth.bluesky)
+					post_bluesky(item, auth.bluesky, image)
 				except:
 					pass
 				try:
@@ -176,7 +195,6 @@ def read_rss_and_tweet(url):
 				except:
 					pass
 				print("Posted:", permalink)
-
 
 def is_in_logfile(content, filename):
 	"""Does the content exist on any line in the log file?"""
