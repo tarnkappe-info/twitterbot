@@ -111,9 +111,25 @@ def stop_signal(number):
 	file_object.close()
 
 
+def post_signal_single(message, recipient, base64data):
+	data = {"message": message, "number": "+4917677918637", "recipients": [recipient], "base64_attachments": base64data}
+	resp = requests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data)
+	if resp.status_code != int(201):
+		print(resp.status_code)
+		print(resp.content)
+	if "error" in dict(resp.json()).keys():
+		if dict(resp.json())["error"] == "Failed to send message due to untrusted identities":
+			requests.put('http://127.0.0.1:8120/v1/identities/+4917677918637/trust/' + str(recipient), timeout=600,
+						 json={"trust_all_known_keys": True})
+		if dict(resp.json())["error"] == "Failed to send message: [413] Rate limit exceeded: 413 (RateLimitException)":
+			time.sleep(2)
+	# Rate Limit
+	if resp.status_code == int(429):
+		time.sleep(1)
+
+
 def post_signal(message, image):
-	# 4.11.24 - Image don't work. No time for debugging.
-	if image and False:
+	if image:
 		img = Image.open(io.BytesIO(requests.get(image, stream=True).content))
 		img.thumbnail((400, 400))
 		with io.BytesIO() as output:
@@ -122,21 +138,12 @@ def post_signal(message, image):
 	with open("/root/Signal/rss/numbers.txt") as file:
 		rs = list()
 		for line in file:
-			data = {"message": message, "number": "+4917677918637", "recipients": [ line.rstrip() ]}
-			resp = requests.post('http://127.0.0.1:8120/v2/send/', timeout=600, json=data)
-			if resp.status_code != int(201):
-				print(resp.status_code)
-				print(resp.content)
-			if "error" in dict(resp.json()).keys():
-				if dict(resp.json())["error"] == "Failed to send message due to untrusted identities":
-					requests.put('http://127.0.0.1:8120/v1/identities/+4915156859153/trust/'+str(line.rstrip()), timeout=600, json={"trust_all_known_keys": True})
-				if dict(resp.json())["error"] == "Failed to send message: [413] Rate limit exceeded: 413 (RateLimitException)":
-					time.sleep(2)
-			# Rate Limit
-			if resp.status_code == int(429):
-				time.sleep(1)
+			post_signal_single(message, line.rstrip(), base64data)
 			time.sleep(0.1)
-
+	# Signal Groups
+	for g in list(requests.get('http://127.0.0.1:8120/v1/groups/+4917677918637', timeout=600).json()):
+		post_signal_single(message, g["id"], base64data)
+		time.sleep(0.1)
 
 def post_facebook(message, url):
 	fbapi = GraphAPI(access_token = auth.FbGraphAPI.access_token)
