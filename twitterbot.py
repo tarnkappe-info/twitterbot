@@ -125,7 +125,7 @@ def post_signal_single(message, recipient, base64data):
 			time.sleep(2)
 	# Rate Limit
 	if resp.status_code == int(429):
-		time.sleep(1)
+		time.sleep(2)
 
 
 def post_signal(message, image):
